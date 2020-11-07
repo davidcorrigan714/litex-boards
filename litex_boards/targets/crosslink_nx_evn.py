@@ -16,6 +16,7 @@ from migen.genlib.resetsync import AsyncResetSynchronizer
 from litex_boards.platforms import crosslink_nx_evn
 
 from litex.soc.cores.nxlram import NXLRAM
+from litex.soc.cores.clock_nxpll import NXPLL
 from litex.soc.cores.spi_flash import SpiFlash
 from litex.build.io import CRG
 from litex.build.generic_platform import *
@@ -37,7 +38,7 @@ class _CRG(Module):
         self.clock_domains.cd_sys = ClockDomain()
 
         # Built in OSC
-        self.submodules.hf_clk = NexusOSCA()
+        self.submodules.hf_clk = NXOSCA()
         hf_clk_freq = 25e6
         self.hf_clk.create_hf_clk(self.cd_por, hf_clk_freq)
 
@@ -51,10 +52,10 @@ class _CRG(Module):
         self.specials += AsyncResetSynchronizer(self.cd_por, ~self.rst_n)
 
         # PLL
-        self.submodules.sys_pll = sys_pll = NEXUSPLL()
+        self.submodules.sys_pll = sys_pll = NXPLL()
         sys_pll.register_clkin(self.cd_por.clk, hf_clk_freq)
         sys_pll.create_clkout(self.cd_sys, sys_clk_freq)
-        self.specials += AsyncResetSynchronizer(self.cd_sys, ~self.sys_pll.locked |  ~por_done )
+        self.specials += AsyncResetSynchronizer(self.cd_sys, ~self.sys_pll.locked | ~por_done )
 
         # This really shouldn't be necessary but the Lattice tools seem to do some weird timing things with latency around
         # generated clocks and I haven't received any answers from Lattice about the details of what it's doing and why.
@@ -114,7 +115,7 @@ def main():
     soc_core_args(parser)
     args = parser.parse_args()
 
-    soc = BaseSoC(int(float(args.sys_clk_freq)), **soc_core_argdict(args))
+    soc = BaseSoC(sys_clk_freq=int(float(args.sys_clk_freq)), **soc_core_argdict(args))
     builder = Builder(soc, **builder_argdict(args))
     builder_kargs = {}
     builder.build(**builder_kargs, run=args.build)
