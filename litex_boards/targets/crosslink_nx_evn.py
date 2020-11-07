@@ -33,24 +33,32 @@ mB = 1024*kB
 
 class _CRG(Module):
     def __init__(self, platform, sys_clk_freq):
-        self.rst = Signal()
-        self.clock_domains.cd_sys = ClockDomain()
         self.clock_domains.cd_por = ClockDomain()
+        self.clock_domains.cd_sys = ClockDomain()
 
-        # TODO: replace with PLL
-        # Clocking
-        self.submodules.sys_clk = sys_osc = NXOSCA()
-        sys_osc.create_hf_clk(self.cd_sys, sys_clk_freq)
+        # Built in OSC
+        self.submodules.hf_clk = NexusOSCA()
+        hf_clk_freq = 25e6
+        self.hf_clk.create_hf_clk(self.cd_por, hf_clk_freq)
+
+        # Power on reset
+        por_count = Signal(16, reset=2**16-1)
+        por_done  = Signal()
+        self.comb += por_done.eq(por_count == 0)
+        self.sync.por += If(~por_done, por_count.eq(por_count - 1))
+
+        self.rst_n = platform.request("gsrn")
+        self.specials += AsyncResetSynchronizer(self.cd_por, ~self.rst_n)
+
+        # PLL
+        self.submodules.sys_pll = sys_pll = NEXUSPLL()
+        sys_pll.register_clkin(self.cd_por.clk, hf_clk_freq)
+        sys_pll.create_clkout(self.cd_sys, sys_clk_freq)
+        self.specials += AsyncResetSynchronizer(self.cd_sys, ~self.sys_pll.locked |  ~por_done )
+
+        # This really shouldn't be necessary but the Lattice tools seem to do some weird timing things with latency around
+        # generated clocks and I haven't received any answers from Lattice about the details of what it's doing and why.
         platform.add_period_constraint(self.cd_sys.clk, 1e9/sys_clk_freq)
-        rst_n = platform.request("gsrn")
-
-        # Power On Reset
-        por_cycles  = 4096
-        por_counter = Signal(log2_int(por_cycles), reset=por_cycles-1)
-        self.comb += self.cd_por.clk.eq(self.cd_sys.clk)
-        self.sync.por += If(por_counter != 0, por_counter.eq(por_counter - 1))
-        self.specials += AsyncResetSynchronizer(self.cd_por, ~rst_n)
-        self.specials += AsyncResetSynchronizer(self.cd_sys, (por_counter != 0) | self.rst)
 
 
 # BaseSoC ------------------------------------------------------------------------------------------
@@ -106,7 +114,7 @@ def main():
     soc_core_args(parser)
     args = parser.parse_args()
 
-    soc = BaseSoC(sys_clk_freq=int(float(args.sys_clk_freq)), **soc_core_argdict(args))
+    soc = BaseSoC(int(float(args.sys_clk_freq)), **soc_core_argdict(args))
     builder = Builder(soc, **builder_argdict(args))
     builder_kargs = {}
     builder.build(**builder_kargs, run=args.build)
