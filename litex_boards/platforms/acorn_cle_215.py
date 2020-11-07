@@ -1,5 +1,8 @@
-# This file is Copyright (c) 2020 Florent Kermarrec <florent@enjoy-digital.fr>
-# License: BSD
+#
+# This file is part of LiteX-Boards.
+#
+# Copyright (c) 2020 Florent Kermarrec <florent@enjoy-digital.fr>
+# SPDX-License-Identifier: BSD-2-Clause
 
 # The Acorn CLE 215+ is a cryptocurrency mining accelerator card from SQRL that can be repurposed
 # as a generic FPGA PCIe development board: http://www.squirrelsresearch.com/acorn-cle-215-plus
@@ -11,19 +14,19 @@ from litex.build.openocd import OpenOCD
 # IOs ----------------------------------------------------------------------------------------------
 
 _io = [
-    # clk / rst
+    # Clk / Rst
     ("clk200", 0,
         Subsignal("p", Pins("J19"), IOStandard("DIFF_SSTL15")),
         Subsignal("n", Pins("H19"), IOStandard("DIFF_SSTL15"))
     ),
 
-    # leds
+    # Leds
     ("user_led", 0, Pins("G3"), IOStandard("LVCMOS33")),
     ("user_led", 1, Pins("H3"), IOStandard("LVCMOS33")),
     ("user_led", 2, Pins("G4"), IOStandard("LVCMOS33")),
     ("user_led", 3, Pins("H4"), IOStandard("LVCMOS33")),
 
-    # spiflash
+    # SPIFlash
     ("spiflash", 0,
         Subsignal("cs_n", Pins("T19")),
         Subsignal("mosi", Pins("P22")),
@@ -33,7 +36,7 @@ _io = [
         IOStandard("LVCMOS33")
     ),
 
-    # pcie
+    # PCIe
     ("pcie_clkreq_n", 0, Pins("G1"), IOStandard("LVCMOS33")),
     ("pcie_x4", 0,
         Subsignal("rst_n", Pins("J1"), IOStandard("LVCMOS33"), Misc("PULLUP=TRUE")),
@@ -45,7 +48,7 @@ _io = [
         Subsignal("tx_n",  Pins("A6 A4 C5 C7")),
     ),
 
-    # dram
+    # DDR3 SDRAM
     ("ddram", 0,
         Subsignal("a", Pins(
             "M15 L21 M16 L18 K21 M18 M21 N20",
@@ -73,6 +76,16 @@ _io = [
     ),
 ]
 
+_serial_io = [
+    # Serial adapter on P2
+    ("serial", 0,
+        Subsignal("tx", Pins("K2")),
+        Subsignal("rx", Pins("J2")),
+        Misc("SLEW=FAST"),
+        IOStandard("LVCMOS33"),
+    ),
+]
+
 _sdcard_io = [
     # SPI SDCard adapter on P2
     # https://spoolqueue.com/new-design/fpga/migen/litex/2020/08/11/acorn-cle-215.html
@@ -94,6 +107,7 @@ class Platform(XilinxPlatform):
 
     def __init__(self):
         XilinxPlatform.__init__(self, "xc7a200t-fbg484-2", _io, toolchain="vivado")
+        self.add_extension(_serial_io)
         self.add_extension(_sdcard_io)
         self.add_platform_command("set_property INTERNAL_VREF 0.750 [get_iobanks 34]")
 

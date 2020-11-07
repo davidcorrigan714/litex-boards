@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 
-# This file is Copyright (c) 2020 Paul Sajna <sajattack@gmail.com>
-# License: BSD
+#
+# This file is part of LiteX-Boards.
+#
+# Copyright (c) 2020 Paul Sajna <sajattack@gmail.com>
+# SPDX-License-Identifier: BSD-2-Clause
 
 import os
 import argparse
@@ -29,6 +32,7 @@ from litevideo.terminal.core import Terminal
 
 class _CRG(Module):
     def __init__(self, platform, sys_clk_freq, with_sdram=False, sdram_rate="1:1"):
+        self.rst = Signal()
         self.clock_domains.cd_sys    = ClockDomain()
         if sdram_rate == "1:2":
             self.clock_domains.cd_sys2x    = ClockDomain()
@@ -44,6 +48,7 @@ class _CRG(Module):
 
         # PLL
         self.submodules.pll = pll = CycloneVPLL(speedgrade="-I7")
+        self.comb += pll.reset.eq(self.rst)
         pll.register_clkin(clk50, 50e6)
         pll.create_clkout(self.cd_sys,    sys_clk_freq)
         if sdram_rate == "1:2":

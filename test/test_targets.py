@@ -1,6 +1,6 @@
 # This file is Copyright (c) 2017-2019 Florent Kermarrec <florent@enjoy-digital.fr>
 # This file is Copyright (c) 2019 Tim 'mithro' Ansell <me@mith.ro>
-# License: BSD
+# SPDX-License-Identifier: BSD-2-Clause
 
 import subprocess
 import unittest
@@ -63,11 +63,17 @@ class TestTargets(unittest.TestCase):
         # Xilinx Kintex Ultrascale
         platforms.append("kcu105")
 
+        # Xilinx Zynq-7000
+        platforms.append("zedboard")
+
         # Xilinx Zynq Ultrascale+
         platforms.append("zcu104")
 
         # Xilinx Virtex Ultrascale+
         platforms.append("vcu118")
+
+        # Intel Cyclone3
+        platforms.append("mist")
 
         # Intel Cyclone4
         platforms.append("de0nano")

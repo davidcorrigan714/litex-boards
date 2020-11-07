@@ -1,13 +1,17 @@
 #!/usr/bin/env python3
 
-# This file is Copyright (c) Greg Davill <greg.davill@gmail.com>
-# License: BSD
+#
+# This file is part of LiteX-Boards.
+#
+# Copyright (c) Greg Davill <greg.davill@gmail.com>
+# SPDX-License-Identifier: BSD-2-Clause
 
 import os
 import sys
 import argparse
 
 from migen import *
+from migen.genlib.misc import WaitTimer
 from migen.genlib.resetsync import AsyncResetSynchronizer
 
 from litex_boards.platforms import orangecrab
@@ -27,6 +31,7 @@ from litedram.phy import ECP5DDRPHY
 
 class _CRG(Module):
     def __init__(self, platform, sys_clk_freq, with_usb_pll=False):
+        self.rst = Signal()
         self.clock_domains.cd_por     = ClockDomain(reset_less=True)
         self.clock_domains.cd_sys     = ClockDomain()
 
@@ -45,9 +50,9 @@ class _CRG(Module):
 
         # PLL
         self.submodules.pll = pll = ECP5PLL()
+        self.comb += pll.reset.eq(~por_done | ~rst_n | self.rst)
         pll.register_clkin(clk48, 48e6)
         pll.create_clkout(self.cd_sys, sys_clk_freq)
-        self.specials += AsyncResetSynchronizer(self.cd_sys, ~por_done | ~pll.locked | ~rst_n)
 
         # USB PLL
         if with_usb_pll:
@@ -55,10 +60,16 @@ class _CRG(Module):
             self.clock_domains.cd_usb_48 = ClockDomain()
             usb_pll = ECP5PLL()
             self.submodules += usb_pll
+            self.comb += usb_pll.reset.eq(~por_done | ~rst_n | self.rst)
             usb_pll.register_clkin(clk48, 48e6)
             usb_pll.create_clkout(self.cd_usb_48, 48e6)
             usb_pll.create_clkout(self.cd_usb_12, 12e6)
 
+        # FPGA Reset (press usr_btn for 1 second to fallback to bootlooader)
+        reset_timer = WaitTimer(sys_clk_freq)
+        self.submodules += reset_timer
+        self.comb += reset_timer.wait.eq(~rst_n)
+        self.comb += platform.request("rst_n").eq(reset_timer.done)
 
 class _CRGSDRAM(Module):
     def __init__(self, platform, sys_clk_freq, with_usb_pll=False):
@@ -70,6 +81,7 @@ class _CRGSDRAM(Module):
         self.clock_domains.cd_sys2x_eb = ClockDomain(reset_less=True)
 
         # # #
+
 
         self.stop  = Signal()
         self.reset = Signal()
@@ -88,6 +100,7 @@ class _CRGSDRAM(Module):
         # PLL
         sys2x_clk_ecsout = Signal()
         self.submodules.pll = pll = ECP5PLL()
+        self.comb += pll.reset.eq(~por_done | ~rst_n)
         pll.register_clkin(clk48, 48e6)
         pll.create_clkout(self.cd_sys2x_i, 2*sys_clk_freq)
         pll.create_clkout(self.cd_init, 24e6)
@@ -106,10 +119,26 @@ class _CRGSDRAM(Module):
                 i_CLKI    = self.cd_sys2x.clk,
                 i_RST     = self.reset,
                 o_CDIVX   = self.cd_sys.clk),
-            AsyncResetSynchronizer(self.cd_init,  ~por_done | ~pll.locked | ~rst_n),
-            AsyncResetSynchronizer(self.cd_sys,   ~por_done | ~pll.locked | ~rst_n | self.reset),
-            AsyncResetSynchronizer(self.cd_sys2x, ~por_done | ~pll.locked | ~rst_n | self.reset),
+            AsyncResetSynchronizer(self.cd_sys,   ~pll.locked | self.reset),
+            AsyncResetSynchronizer(self.cd_sys2x, ~pll.locked | self.reset),
         ]
+
+        # USB PLL
+        if with_usb_pll:
+            self.clock_domains.cd_usb_12 = ClockDomain()
+            self.clock_domains.cd_usb_48 = ClockDomain()
+            usb_pll = ECP5PLL()
+            self.submodules += usb_pll
+            self.comb += usb_pll.reset.eq(~por_done | ~rst_n)
+            usb_pll.register_clkin(clk48, 48e6)
+            usb_pll.create_clkout(self.cd_usb_48, 48e6)
+            usb_pll.create_clkout(self.cd_usb_12, 12e6)
+
+        # FPGA Reset (press usr_btn for 1 second to fallback to bootlooader)
+        reset_timer = WaitTimer(sys_clk_freq)
+        self.submodules += reset_timer
+        self.comb += reset_timer.wait.eq(~rst_n)
+        self.comb += platform.request("rst_n").eq(~reset_timer.done)
 
 # BaseSoC ------------------------------------------------------------------------------------------
 
@@ -147,10 +176,16 @@ class BaseSoC(SoCCore):
             }
             sdram_module = available_sdram_modules.get(sdram_device)
 
+            ddram_pads = platform.request("ddram")
             self.submodules.ddrphy = ECP5DDRPHY(
-                platform.request("ddram"),
-                sys_clk_freq=sys_clk_freq)
+                pads         = ddram_pads,
+                sys_clk_freq = sys_clk_freq)
+            self.ddrphy.settings.rtt_nom = "disabled"
             self.add_csr("ddrphy")
+            if hasattr(ddram_pads, "vccio"):
+                self.comb += ddram_pads.vccio.eq(0b111111)
+            if hasattr(ddram_pads, "gnd"):
+                self.comb += ddram_pads.gnd.eq(0)
             self.comb += self.crg.stop.eq(self.ddrphy.init.stop)
             self.comb += self.crg.reset.eq(self.ddrphy.init.reset)
             self.add_sdram("sdram",

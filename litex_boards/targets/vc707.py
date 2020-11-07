@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
-# This file is Copyright (c) 2019 Michael Betz <michibetz@gmail.com>
-# This file is Copyright (c) 2020 Fei Gao <feig@princeton.edu>
-# This file is Copyright (c) 2020 Florent Kermarrec <florent@enjoy-digital.fr>
-# License: BSD
+# Copyright (c) 2019 Michael Betz <michibetz@gmail.com>
+# Copyright (c) 2020 Fei Gao <feig@princeton.edu>
+# Copyright (c) 2020 Florent Kermarrec <florent@enjoy-digital.fr>
+# SPDX-License-Identifier: BSD-2-Clause
 
 import os
 import argparse
@@ -25,20 +25,21 @@ from litedram.phy import s7ddrphy
 
 class _CRG(Module):
     def __init__(self, platform, sys_clk_freq):
+        self.rst = Signal()
         self.clock_domains.cd_sys    = ClockDomain()
         self.clock_domains.cd_sys4x  = ClockDomain(reset_less=True)
-        self.clock_domains.cd_clk200 = ClockDomain()
+        self.clock_domains.cd_idelay = ClockDomain()
 
         # # #
 
         self.submodules.pll = pll = S7MMCM(speedgrade=-2)
-        self.comb += pll.reset.eq(platform.request("cpu_reset"))
+        self.comb += pll.reset.eq(platform.request("cpu_reset") | self.rst)
         pll.register_clkin(platform.request("clk200"), 200e6)
         pll.create_clkout(self.cd_sys,    sys_clk_freq)
         pll.create_clkout(self.cd_sys4x,  4*sys_clk_freq)
-        pll.create_clkout(self.cd_clk200, 200e6)
+        pll.create_clkout(self.cd_idelay, 200e6)
 
-        self.submodules.idelayctrl = S7IDELAYCTRL(self.cd_clk200)
+        self.submodules.idelayctrl = S7IDELAYCTRL(self.cd_idelay)
 
 # BaseSoC ------------------------------------------------------------------------------------------
 
@@ -60,8 +61,7 @@ class BaseSoC(SoCCore):
             self.submodules.ddrphy = s7ddrphy.V7DDRPHY(platform.request("ddram"),
                 memtype      = "DDR3",
                 nphases      = 4,
-                sys_clk_freq = sys_clk_freq,
-                cmd_latency  = 1)
+                sys_clk_freq = sys_clk_freq)
             self.add_csr("ddrphy")
             self.add_sdram("sdram",
                 phy                     = self.ddrphy,

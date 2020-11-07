@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 
-# This file is Copyright (c) 2015 Robert Jordens <jordens@gmail.com>
-# This file is Copyright (c) 2015 Sebastien Bourdeauducq <sb@m-labs.hk>
-# This file is Copyright (c) 2015 Yann Sionneau <yann.sionneau@gmail.com>
-# This file is Copyright (c) 2016-2017 Tim 'mithro' Ansell <mithro@mithis.com>
-# This file is Copyright (c) 2019 Florent Kermarrec <florent@enjoy-digital.fr>
-# License: BSD
+#
+# This file is part of LiteX-Boards.
+#
+# Copyright (c) 2015 Robert Jordens <jordens@gmail.com>
+# Copyright (c) 2015 Sebastien Bourdeauducq <sb@m-labs.hk>
+# Copyright (c) 2015 Yann Sionneau <yann.sionneau@gmail.com>
+# Copyright (c) 2016-2017 Tim 'mithro' Ansell <mithro@mithis.com>
+# Copyright (c) 2019 Florent Kermarrec <florent@enjoy-digital.fr>
+# SPDX-License-Identifier: BSD-2-Clause
 
 import os
 import argparse
@@ -29,6 +32,7 @@ from litedram.phy import s6ddrphy
 
 class _CRG(Module):
     def __init__(self, platform, sys_clk_freq):
+        self.rst = Signal()
         self.clock_domains.cd_sys           = ClockDomain()
         self.clock_domains.cd_sdram_half    = ClockDomain()
         self.clock_domains.cd_sdram_full_wr = ClockDomain()
@@ -101,7 +105,7 @@ class _CRG(Module):
         )
 
         # Power on reset
-        reset = platform.request("user_btn") | self.reset
+        reset = platform.request("user_btn") | self.reset | self.rst
         self.clock_domains.cd_por = ClockDomain()
         por = Signal(max=1 << 11, reset=(1 << 11) - 1)
         self.sync.por += If(por != 0, por.eq(por - 1))

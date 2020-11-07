@@ -1,5 +1,8 @@
-# This file is Copyright (c) 2019 Antony Pavlov <antonynpavlov@gmail.com>
-# License: BSD
+#
+# This file is part of LiteX-Boards.
+#
+# Copyright (c) 2019 Antony Pavlov <antonynpavlov@gmail.com>
+# SPDX-License-Identifier: BSD-2-Clause
 
 from litex.build.generic_platform import *
 from litex.build.altera import AlteraPlatform
@@ -8,13 +11,16 @@ from litex.build.altera.programmer import USBBlaster
 # IOs ----------------------------------------------------------------------------------------------
 
 _io = [
+    # Clk
     ("clk50", 0, Pins("AF14"), IOStandard("3.3-V LVTTL")),
 
+    # Serial
     ("serial", 0,
         Subsignal("tx", Pins("AC18"), IOStandard("3.3-V LVTTL")), # JP1 GPIO[0]
         Subsignal("rx", Pins("Y17"),  IOStandard("3.3-V LVTTL"))  # JP1 GPIO[1]
     ),
 
+    # SDR SDRAM
     ("sdram_clock", 0, Pins("AH12"), IOStandard("3.3-V LVTTL")),
     ("sdram", 0,
         Subsignal("a",     Pins(

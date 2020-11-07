@@ -1,5 +1,8 @@
-# This file is Copyright (c) 2019 Michael Betz <michibetz@gmail.com>
-# License: BSD
+#
+# This file is part of LiteX-Boards.
+#
+# Copyright (c) 2019 Michael Betz <michibetz@gmail.com>
+# SPDX-License-Identifier: BSD-2-Clause
 
 from litex.build.generic_platform import *
 from litex.build.xilinx import XilinxPlatform
@@ -8,18 +11,28 @@ from litex.build.openocd import OpenOCD
 # IOs ----------------------------------------------------------------------------------------------
 
 _io = [
+    # Clk / Rst
+    ("clk200", 0,
+        Subsignal("p", Pins("K21")),
+        Subsignal("n", Pins("K22")),
+        IOStandard("LVDS_25")
+    ),
+    ("cpu_reset", 0, Pins("H8"), IOStandard("LVCMOS25")),
+
+    # Leds
     ("user_led", 0, Pins("D17"), IOStandard("LVCMOS25")),
     ("user_led", 1, Pins("AB4"), IOStandard("LVCMOS25")),
     ("user_led", 2, Pins("D21"), IOStandard("LVCMOS25")),
     ("user_led", 3, Pins("W15"), IOStandard("LVCMOS25")),
 
+    # Buttons
     ("user_btn", 0, Pins("F3"), IOStandard("LVCMOS25")),
     ("user_btn", 1, Pins("G6"), IOStandard("LVCMOS25")),
     ("user_btn", 2, Pins("F5"), IOStandard("LVCMOS25")),
     ("user_btn", 3, Pins("C1"), IOStandard("LVCMOS25")),
 
-    ("cpu_reset", 0, Pins("H8"), IOStandard("LVCMOS25")),
 
+    # Serial
     ("serial", 0,
         Subsignal("cts", Pins("F19")),
         Subsignal("rts", Pins("F18")),
@@ -28,12 +41,7 @@ _io = [
         IOStandard("LVCMOS25")
     ),
 
-    ("clk200", 0,
-        Subsignal("p", Pins("K21")),
-        Subsignal("n", Pins("K22")),
-        IOStandard("LVDS_25")
-    ),
-
+    # GMII Ethernet
     ("eth_clocks", 0,
         # Subsignal("tx", Pins("L20")),  # Comment to force GMII 1G only mode
         Subsignal("gtx", Pins("AB7")),

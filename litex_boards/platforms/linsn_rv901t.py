@@ -1,6 +1,9 @@
-# This file is Copyright (c) 2019-2020 Florent Kermarrec <florent@enjoy-digital.fr>
-# This file is Copyright (c) 2019-2020 Serge Bazanski <serge@bazanski.pl>
-# License: BSD
+#
+# This file is part of LiteX-Boards.
+#
+# Copyright (c) 2019-2020 Florent Kermarrec <florent@enjoy-digital.fr>
+# Copyright (c) 2019-2020 Serge Bazanski <serge@bazanski.pl>
+# SPDX-License-Identifier: BSD-2-Clause
 
 # The Linsn RV901T PCB and IOs have been documented with Chubby75 project
 # available at: https://github.com/q3k/chubby75
@@ -12,20 +15,20 @@ from litex.build.openocd import OpenOCD
 # IOs ----------------------------------------------------------------------------------------------
 
 _io = [
-    # clock
+    # Clk / Rst
     ("clk25", 0, Pins("M9"), IOStandard("LVCMOS33")),
 
-    # led
+    # Leds
     ("user_led", 0, Pins("F7"), IOStandard("LVCMOS33")),
 
-    # serial
+    # Serial
     ("serial", 0,
         Subsignal("tx", Pins("H5")),
         Subsignal("rx", Pins("G6")),
         IOStandard("LVCMOS33")
     ),
 
-    # ethernet
+    # RGMII Ethernet
     ("eth_clocks", 0,
         Subsignal("tx", Pins("D1")),
         Subsignal("rx", Pins("F1")),
@@ -38,7 +41,6 @@ _io = [
         Subsignal("tx_data", Pins("E3 E2 E1 F3")),
         IOStandard("LVCMOS33")
     ),
-
     ("eth_clocks", 1,
         Subsignal("tx", Pins("J1")),
         Subsignal("rx", Pins("K3")),
@@ -52,7 +54,7 @@ _io = [
         IOStandard("LVCMOS33")
     ),
 
-    # sdram
+    # SDR SDRAM
     ("sdram_clock", 0, Pins("K11"), IOStandard("LVCMOS33"), Misc("SLEW=FAST")),
     ("sdram_clock", 1, Pins("K12"), IOStandard("LVCMOS33"), Misc("SLEW=FAST")),
     ("sdram", 0,

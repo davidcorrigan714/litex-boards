@@ -1,5 +1,8 @@
-# This file is Copyright (c) 2020 Greg Davill <greg.davill@gmail.com>
-# License: BSD
+#
+# This file is part of LiteX-Boards.
+#
+# Copyright (c) 2020 Greg Davill <greg.davill@gmail.com>
+# SPDX-License-Identifier: BSD-2-Clause
 
 from litex.build.generic_platform import *
 from litex.build.lattice import LatticePlatform
@@ -8,19 +11,21 @@ from litex.build.dfu import DFUProg
 # IOs ----------------------------------------------------------------------------------------------
 
 _io_r0_1 = [
+    # Clk / Rst
     ("clk48", 0,  Pins("A9"),  IOStandard("LVCMOS33")),
     ("rst_n", 0, Pins("R16"), IOStandard("LVCMOS33")),
 
+    # Leds
+    ("user_led", 0, Pins("V17"), IOStandard("LVCMOS33")), # rgb_led.r
+    ("user_led", 1, Pins("T17"), IOStandard("LVCMOS33")), # rgb_led.g
+    ("user_led", 2, Pins("J3"),  IOStandard("LVCMOS33")), # rgb_led.b
     ("rgb_led", 0,
         Subsignal("r", Pins("V17"), IOStandard("LVCMOS33")),
         Subsignal("g", Pins("T17"), IOStandard("LVCMOS33")),
         Subsignal("b", Pins("J3"),  IOStandard("LVCMOS33")),
     ),
 
-    ("user_led", 0, Pins("V17"), IOStandard("LVCMOS33")), # rgb_led.r
-    ("user_led", 1, Pins("V17"), IOStandard("LVCMOS33")), # rgb_led.g
-    ("user_led", 2, Pins("V17"), IOStandard("LVCMOS33")), # rgb_led.b
-
+    # DDR3 SDRAM
     ("ddram", 0,
         Subsignal("a", Pins(
             "A4 D2 C3 C7 D3 D4 D1 B2",
@@ -46,6 +51,7 @@ _io_r0_1 = [
         Misc("SLEWRATE=FAST")
     ),
 
+    # USB
     ("usb", 0,
         Subsignal("d_p", Pins("N1")),
         Subsignal("d_n", Pins("M2")),
@@ -53,13 +59,15 @@ _io_r0_1 = [
         IOStandard("LVCMOS33")
     ),
 
+    # SPIFlash
     ("spiflash4x", 0,
         Subsignal("cs_n", Pins("U17")),
-    #    Subsignal("clk",  Pins("U16")),
+        #Subsignal("clk",  Pins("U16")),
         Subsignal("dq",   Pins("U18 T18 R18 N18")),
         IOStandard("LVCMOS33")
     ),
 
+    # SPI
     ("spi-internal", 0,
         Subsignal("cs_n",   Pins("B11"), Misc("PULLMODE=UP")),
         Subsignal("clk",    Pins("C11")),
@@ -69,6 +77,7 @@ _io_r0_1 = [
         IOStandard("LVCMOS33"),
     ),
 
+    # SDCard
     ("spisdcard", 0,
         Subsignal("clk",  Pins("K1")),
         Subsignal("mosi", Pins("K2"), Misc("PULLMODE=UP")),
@@ -80,21 +89,24 @@ _io_r0_1 = [
 ]
 
 _io_r0_2 = [
+    # Clk / Rst
     ("clk48", 0, Pins("A9"),  IOStandard("LVCMOS33")),
     ("rst_n", 0, Pins("V17"), IOStandard("LVCMOS33")),
 
+    # Buttons
     ("usr_btn", 0, Pins("J17"), IOStandard("SSTL135_I")),
 
+    # Leds
+    ("user_led", 0, Pins("K4"), IOStandard("LVCMOS33")), # rgb_led.r
+    ("user_led", 1, Pins("M3"), IOStandard("LVCMOS33")), # rgb_led.g
+    ("user_led", 2, Pins("J3"), IOStandard("LVCMOS33")), # rgb_led.b
     ("rgb_led", 0,
         Subsignal("r", Pins("K4"), IOStandard("LVCMOS33")),
         Subsignal("g", Pins("M3"), IOStandard("LVCMOS33")),
         Subsignal("b", Pins("J3"), IOStandard("LVCMOS33")),
     ),
 
-    ("user_led", 0, Pins("K4"), IOStandard("LVCMOS33")), # rgb_led.r
-    ("user_led", 1, Pins("M3"), IOStandard("LVCMOS33")), # rgb_led.g
-    ("user_led", 2, Pins("J3"), IOStandard("LVCMOS33")), # rgb_led.b
-
+    # DDR3 SDRAM
     ("ddram", 0,
         Subsignal("a", Pins(
             "C4 D2 D3 A3 A4 D4 C3 B2",
@@ -110,7 +122,7 @@ _io_r0_2 = [
             "C17 D15 B17 C16 A15 B13 A17 A13",
             "F17 F16 G15 F15 J16 C18 H16 F18"),
             IOStandard("SSTL135_I"),
-            Misc("TERMINATION=75")),
+            Misc("TERMINATION=OFF")), # Misc("TERMINATION=75") Disabled to reduce heat
         Subsignal("dqs_p", Pins("B15 G18"), IOStandard("SSTL135D_I"),
             Misc("TERMINATION=OFF"),
             Misc("DIFFRESISTOR=100")),
@@ -123,6 +135,7 @@ _io_r0_2 = [
         Misc("SLEWRATE=FAST")
     ),
 
+    # USB
     ("usb", 0,
         Subsignal("d_p", Pins("N1")),
         Subsignal("d_n", Pins("M2")),
@@ -130,6 +143,7 @@ _io_r0_2 = [
         IOStandard("LVCMOS33")
     ),
 
+    # SPIFlash
     ("spiflash4x", 0,
         Subsignal("cs_n", Pins("U17"), IOStandard("LVCMOS33")),
         #Subsignal("clk",  Pins("U16"), IOStandard("LVCMOS33")),
@@ -144,6 +158,7 @@ _io_r0_2 = [
         Subsignal("hold", Pins("N18"), IOStandard("LVCMOS33")),
     ),
 
+    # SDCard
     ("spisdcard", 0,
         Subsignal("clk",  Pins("K1")),
         Subsignal("mosi", Pins("K2"), Misc("PULLMODE=UP")),
@@ -198,7 +213,6 @@ feather_spi = [
         Subsignal("sck",  Pins("GPIO:15"), IOStandard("LVCMOS33"))
     )
 ]
-
 
 # Platform -----------------------------------------------------------------------------------------
 

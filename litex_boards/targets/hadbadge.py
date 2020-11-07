@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 
-# This file is Copyright (c) 2020 Michael Welling <mwelling@ieee.org>
-# This file is Copyright (c) 2020 Sean Cross <sean@xobs.io>
-# This file is Copyright (c) 2020 Drew Fustini <drew@pdp7.com>
-# This file is Copyright (c) 2020 Florent Kermarrec <florent@enjoy-digital.fr>
-# License: BSD
+#
+# This file is part of LiteX-Boards.
+#
+# Copyright (c) 2020 Michael Welling <mwelling@ieee.org>
+# Copyright (c) 2020 Sean Cross <sean@xobs.io>
+# Copyright (c) 2020 Drew Fustini <drew@pdp7.com>
+# Copyright (c) 2020 Florent Kermarrec <florent@enjoy-digital.fr>
+# SPDX-License-Identifier: BSD-2-Clause
 
 import os
 import argparse
@@ -32,6 +35,7 @@ from litedram.modules import AS4C32M8
 
 class _CRG(Module):
     def __init__(self, platform, sys_clk_freq):
+        self.rst = Signal()
         self.clock_domains.cd_sys    = ClockDomain()
         self.clock_domains.cd_sys_ps = ClockDomain(reset_less=True)
 
@@ -42,10 +46,10 @@ class _CRG(Module):
 
         # PLL
         self.submodules.pll = pll = ECP5PLL()
+        self.comb += pll.reset.eq(self.rst)
         pll.register_clkin(clk8, 8e6)
         pll.create_clkout(self.cd_sys,    sys_clk_freq)
         pll.create_clkout(self.cd_sys_ps, sys_clk_freq, phase=90)
-        self.specials += AsyncResetSynchronizer(self.cd_sys, ~pll.locked)
 
         # SDRAM clock
         self.specials += DDROutput(1, 0, platform.request("sdram_clock"), ClockSignal("sys_ps"))
