@@ -52,14 +52,10 @@ class _CRG(Module):
         self.specials += AsyncResetSynchronizer(self.cd_por, ~self.rst_n)
 
         # PLL
-        self.submodules.sys_pll = sys_pll = NXPLL()
+        self.submodules.sys_pll = sys_pll = NXPLL(platform=platform, create_output_port_clocks=True)
         sys_pll.register_clkin(self.cd_por.clk, hf_clk_freq)
         sys_pll.create_clkout(self.cd_sys, sys_clk_freq)
         self.specials += AsyncResetSynchronizer(self.cd_sys, ~self.sys_pll.locked | ~por_done )
-
-        # This really shouldn't be necessary but the Lattice tools seem to do some weird timing things with latency around
-        # generated clocks and I haven't received any answers from Lattice about the details of what it's doing and why.
-        platform.add_period_constraint(self.cd_sys.clk, 1e9/sys_clk_freq)
 
 
 # BaseSoC ------------------------------------------------------------------------------------------
